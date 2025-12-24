@@ -10,14 +10,9 @@ from sklearn.linear_model import LogisticRegression
 def main():
     BASE_DIR = Path(__file__).resolve().parent
 
-    # ✅ CI friendly: tracking ke folder lokal (biar run+artifact tersimpan)
-    mlflow.set_tracking_uri(f"file:{(BASE_DIR / 'mlruns').as_posix()}")
-    mlflow.set_experiment("ci_experiment")
-
-    # ✅ autolog (tanpa logging manual)
+    # ✅ Autolog saja (tanpa manual log, tanpa start_run)
     mlflow.sklearn.autolog(log_models=True)
 
-    # dataset path
     data_path = BASE_DIR / "namadataset_prepocessing" / "listening_history_preprocessed.csv"
     if not data_path.exists():
         alt_path = BASE_DIR / "namadataset_preprocessing" / "listening_history_preprocessed.csv"
@@ -35,11 +30,10 @@ def main():
         X, y, test_size=0.2, random_state=42
     )
 
-    # ✅ JANGAN pakai mlflow.start_run() di MLflow Project
     model = LogisticRegression(max_iter=1000)
     model.fit(X_train, y_train)
 
-    print("DONE: MLflow Project training selesai (autolog menyimpan metrics & model).")
+    print("DONE: CI training selesai (autolog menyimpan metrics & model).")
 
 
 if __name__ == "__main__":
