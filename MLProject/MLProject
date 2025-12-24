@@ -1,4 +1,6 @@
-name: workflow-ci
+name: workflow-ci-mlflow
+
+conda_env: conda.yaml
 
 entry_points:
   main:

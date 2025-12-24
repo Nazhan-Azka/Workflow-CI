@@ -5,16 +5,26 @@ import mlflow.sklearn
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score
 
 
 def main():
     BASE_DIR = Path(__file__).resolve().parent
 
-    # Dataset path (sesuaikan dengan folder kamu)
+    # ✅ CI friendly: simpan tracking ke folder lokal repo
+    mlflow.set_tracking_uri(f"file:{(BASE_DIR / 'mlruns').as_posix()}")
+    mlflow.set_experiment("ci_experiment")
+
+    # ✅ wajib (basic): autolog
+    mlflow.sklearn.autolog(log_models=True)
+
+    # dataset (sesuaikan folder kamu)
     data_path = BASE_DIR / "namadataset_prepocessing" / "listening_history_preprocessed.csv"
     if not data_path.exists():
-        raise FileNotFoundError(f"Dataset tidak ditemukan: {data_path}")
+        alt_path = BASE_DIR / "namadataset_preprocessing" / "listening_history_preprocessed.csv"
+        if alt_path.exists():
+            data_path = alt_path
+        else:
+            raise FileNotFoundError(f"Dataset tidak ditemukan: {data_path} / {alt_path}")
 
     df = pd.read_csv(data_path)
 
@@ -25,21 +35,11 @@ def main():
         X, y, test_size=0.2, random_state=42
     )
 
-    # ✅ Penting: gunakan run yang sudah dibuat oleh MLflow Project kalau ada
-    # start_run() tanpa args akan "resume" active run dari MLflow Project
-    with mlflow.start_run():
+    with mlflow.start_run(run_name="ci_baseline_logreg_autolog"):
         model = LogisticRegression(max_iter=1000)
         model.fit(X_train, y_train)
 
-        y_pred = model.predict(X_test)
-
-        mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
-        mlflow.log_metric("f1_score", f1_score(y_test, y_pred, zero_division=0))
-
-        # log model sebagai artifact
-        mlflow.sklearn.log_model(model, artifact_path="model")
-
-    print("CI SUCCESS: training & logging selesai.")
+    print("DONE: CI training selesai. Cek artifact di workflow artifacts / repo.")
 
 
 if __name__ == "__main__":
