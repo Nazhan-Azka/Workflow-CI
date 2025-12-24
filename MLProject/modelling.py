@@ -11,28 +11,28 @@ from sklearn.metrics import accuracy_score, f1_score
 def main():
     BASE_DIR = Path(__file__).resolve().parent
 
-    # ✅ Tracking pakai SQLite (aman di Windows)
+    # ✅ Tracking pakai SQLite (portable di GitHub Actions)
     tracking_db = BASE_DIR / "mlflow.db"
     mlflow.set_tracking_uri(f"sqlite:///{tracking_db.as_posix()}")
 
-    # ✅ Simpan artifacts ke folder lokal
+    # ✅ Artifacts disimpan di folder lokal (portable)
     artifacts_dir = (BASE_DIR / "mlruns_artifacts").resolve()
-    artifacts_dir.mkdir(exist_ok=True)
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create / set experiment dengan artifact_location yang jelas
+    # ✅ Set experiment (kalau belum ada, buat)
     exp_name = "basic_experiment"
     exp = mlflow.get_experiment_by_name(exp_name)
     if exp is None:
         exp_id = mlflow.create_experiment(
             exp_name,
-            artifact_location=artifacts_dir.as_uri()  # ini valid karena folder lokal biasa
+            artifact_location=str(artifacts_dir)  # <- paling aman lintas OS
         )
     else:
         exp_id = exp.experiment_id
 
     mlflow.set_experiment(experiment_id=exp_id)
 
-    # ✅ Load dataset (sesuaikan dengan folder kamu yang typo)
+    # ✅ Load dataset (SESUAIKAN DENGAN FOLDER DI REPO KAMU)
     data_path = BASE_DIR / "namadataset_prepocessing" / "listening_history_preprocessed.csv"
     if not data_path.exists():
         raise FileNotFoundError(f"Dataset tidak ditemukan: {data_path}")
@@ -55,10 +55,10 @@ def main():
         mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
         mlflow.log_metric("f1_score", f1_score(y_test, y_pred, zero_division=0))
 
-        # ✅ Simpan model sebagai artifact
+        # ✅ Simpan model sebagai artifact (nama folder artifact)
         mlflow.sklearn.log_model(model, artifact_path="model")
 
-    print("SUCCESS: run selesai dan model tersimpan sebagai artifact.")
+    print("SUCCESS: CI training selesai dan model tersimpan sebagai artifact.")
 
 
 if __name__ == "__main__":
